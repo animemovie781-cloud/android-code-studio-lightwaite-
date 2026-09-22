@@ -273,8 +273,7 @@ class QuickRunWithCancellationAction(context: Context, override val order: Int) 
       log.error("APK file does not exist!")
       return
     }
-    
-    installInternal(activity as com.tom.rv2ide.activities.editor.BaseEditorActivity, apk)
+    installInternal(activity as com.tom.rv2ide.activities.editor.BaseEditorActivity, data, apk)
   }
 
   private fun isLightweightProject(dir: File?): Boolean {
@@ -309,7 +308,7 @@ class QuickRunWithCancellationAction(context: Context, override val order: Int) 
     return true
   }
   
-  private fun installInternal(activity: com.tom.rv2ide.activities.editor.BaseEditorActivity, apk: File) {
+  private fun installInternal(activity: com.tom.rv2ide.activities.editor.BaseEditorActivity, data: ActionData, apk: File) {
     // Existing install logic goes here (truncated in original file)
 
     log.debug("Installing APK: {}", apk)
