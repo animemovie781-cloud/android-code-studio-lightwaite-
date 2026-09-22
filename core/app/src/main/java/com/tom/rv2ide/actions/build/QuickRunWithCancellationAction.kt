@@ -126,6 +126,17 @@ class QuickRunWithCancellationAction(context: Context, override val order: Int) 
       return lightweightBuild(data, projectManager.projectDir)
     }
 
+    // Check if project has been synced/initialized via Gradle tooling server
+    val workspace = com.tom.rv2ide.projects.IProjectManager.getInstance().getWorkspace()
+    if (workspace == null) {
+      val activity = data.requireActivity()
+      activity.runOnUiThread {
+        activity.flashError("Project not initialized. Please wait for Gradle sync to complete, or re-open the project.")
+      }
+      log.error("quickRun: workspace is null — Gradle project not yet initialized")
+      return false
+    }
+
     openApplicationModuleChooser(data) { module ->
       val activity = data.requireActivity()
 
