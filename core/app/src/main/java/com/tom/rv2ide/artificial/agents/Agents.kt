@@ -143,8 +143,15 @@ class Agents(ctx: Context) {
   private val localllm_models = arrayOf(
     "local-model"
   )
-  
-  val ai_agents = openai_models + claude_models + gemini_models + deepseek_models + grok_models + localllm_models
+
+  // Custom (OpenAI-compatible) provider — user supplies their own model name at runtime.
+  // We list a sentinel so the provider appears in the selector; the actual model name
+  // is read from the "custom_provider_model_name" preference at runtime.
+  private val custom_models = arrayOf(
+    "custom-model"
+  )
+
+  val ai_agents = openai_models + claude_models + gemini_models + deepseek_models + grok_models + localllm_models + custom_models
   
   fun getModelsForProvider(providerId: String): Array<String> {
     return when(providerId) {
@@ -154,6 +161,7 @@ class Agents(ctx: Context) {
       "deepseek" -> deepseek_models
       "grok" -> grok_models
       "localllm" -> localllm_models
+      "custom" -> custom_models
       else -> gemini_models
     }
   }
@@ -166,6 +174,7 @@ class Agents(ctx: Context) {
       modelName in deepseek_models -> "deepseek"
       modelName in grok_models -> "grok"
       modelName in localllm_models -> "localllm"
+      modelName in custom_models -> "custom"
       else -> null
     }
   }
@@ -177,6 +186,7 @@ class Agents(ctx: Context) {
           name in claude_models -> "claude"
           name in deepseek_models -> "deepseek"
           name in grok_models -> "grok"
+          name in custom_models -> "custom"
           else -> sp.getString(PROVIDER_KEY, "gemini") ?: "gemini"
       }
       
@@ -194,6 +204,7 @@ class Agents(ctx: Context) {
       "claude" -> "claude-sonnet-4-20250514"
       "deepseek" -> "deepseek-chat"
       "grok" -> "grok-beta"
+      "custom" -> "custom-model"
       else -> "gemini-2.5-pro"
     }
   }

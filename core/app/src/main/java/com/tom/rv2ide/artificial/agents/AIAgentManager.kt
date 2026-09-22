@@ -53,6 +53,7 @@ class AIAgentManager(private val context: Context) {
         Grok.registerAgent()
         DeepSeek.registerAgent()
         LocalLLM.registerAgent()
+        com.tom.rv2ide.artificial.agents.custom.CustomProvider.registerAgent()
         
         permissionManager.setFileWriteEnabled(true)
         permissionManager.setRequireConfirmation(false)
