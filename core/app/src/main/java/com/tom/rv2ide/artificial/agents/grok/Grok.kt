@@ -466,6 +466,15 @@ class Grok : AIAgent {
   }
 
   override fun isInitialized(): Boolean = apiKey != null
+
+  override suspend fun handleBuildError(errors: List<String>): Result<List<String>> {
+    val prompt = "The build failed with the following errors:\n${errors.joinToString(\"\n\")}\nPlease fix these errors."
+    return generateCode(prompt, null, "kotlin", null).map { listOf("Applied fixes") }
+  }
+
+  override suspend fun buildAndFixLoop(maxAttempts: Int): Result<java.io.File> {
+    return Result.failure(UnsupportedOperationException("Not yet implemented"))
+  }
 }
 
 data class FileModification(

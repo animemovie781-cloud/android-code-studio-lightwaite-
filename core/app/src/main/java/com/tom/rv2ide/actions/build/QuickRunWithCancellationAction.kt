@@ -274,7 +274,7 @@ class QuickRunWithCancellationAction(context: Context, override val order: Int) 
       return
     }
     
-    installInternal(activity, apk)
+    installInternal(activity as com.tom.rv2ide.activities.editor.BaseEditorActivity, apk)
   }
 
   private fun isLightweightProject(dir: File?): Boolean {
@@ -309,7 +309,7 @@ class QuickRunWithCancellationAction(context: Context, override val order: Int) 
     return true
   }
   
-  private fun installInternal(activity: Context, apk: File) {
+  private fun installInternal(activity: com.tom.rv2ide.activities.editor.BaseEditorActivity, apk: File) {
     // Existing install logic goes here (truncated in original file)
 
     log.debug("Installing APK: {}", apk)

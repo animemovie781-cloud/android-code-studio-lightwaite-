@@ -66,15 +66,15 @@ class AIAgentManager(private val context: Context) {
             val buildService = com.tom.rv2ide.services.builder.LightweightBuildService()
             val result = buildService.executeTasks("${projectDir.absolutePath}:assembleDebug").get()
             
-            if (result != null && result.isSuccessful) {
-                return true
+            if (result == null || result.isSuccessful) {
+                return result != null
             }
             
-            val errors = result?.failedTasks ?: emptyList()
-            if (errors.isEmpty()) break
+            val failure = result.failure
+            if (failure == null) break
             
             val agent = currentAgent ?: return false
-            val fixes = agent.handleBuildError(errors.filterNotNull())
+            val fixes = agent.handleBuildError(listOf(failure.name))
             if (fixes.isFailure) break
             
             attempts++

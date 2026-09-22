@@ -21,7 +21,7 @@ class LightweightBuildService : Service(), BuildService {
 
     override fun metadata(): CompletableFuture<ToolingServerMetadata> {
         return CompletableFuture.completedFuture(
-            ToolingServerMetadata("LightweightBuildEngine", "1.0", "1.0", "1.0", "1.0")
+            ToolingServerMetadata(android.os.Process.myPid())
         )
     }
 
@@ -70,7 +70,7 @@ class LightweightBuildService : Service(), BuildService {
             val result = engine.build()
 
             // In real app, we should map LightweightBuildResult to TaskExecutionResult properly
-            TaskExecutionResult(result.success, result.errors.map { it.message })
+            TaskExecutionResult(result.success, if (result.success) null else TaskExecutionResult.Failure.BUILD_FAILED)
         }
     }
 
