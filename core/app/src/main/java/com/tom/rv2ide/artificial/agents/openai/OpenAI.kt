@@ -480,7 +480,7 @@ class OpenAI : AIAgent {
   override fun isInitialized(): Boolean = apiKey != null
 
   override suspend fun handleBuildError(errors: List<String>): Result<List<String>> {
-    val prompt = "The build failed with the following errors:\n${errors.joinToString(\"\n\")}\nPlease fix these errors."
+    val prompt = "The build failed with the following errors:\n" + errors.joinToString("\n") + "\nPlease fix these errors."
     return generateCode(prompt, null, "kotlin", null).map { listOf("Applied fixes") }
   }
 
