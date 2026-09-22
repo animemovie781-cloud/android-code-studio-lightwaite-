@@ -33,6 +33,7 @@ dependencies {
     api(libs.common.lang3)
     api(libs.common.utilcode)
     api(libs.google.guava)
+    api(libs.google.gson)
     api(libs.google.material)
     
     api(libs.androidx.appcompat)

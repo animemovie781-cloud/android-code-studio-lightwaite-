@@ -1,0 +1,1143 @@
+# PROJECT: Android Code Studio Lightweight Build System
+
+## ROLE
+
+You are a senior Android build-system engineer and Java/Kotlin developer.
+
+You are modifying the existing open-source **Android Code Studio** project, NOT creating a new IDE from scratch.
+
+Repository:
+https://github.com/AndroidCSOfficial/android-code-studio
+
+The existing Android Code Studio features must remain functional:
+
+* Code editor
+* Project explorer
+* Java/XML/Kotlin language support
+* XML UI designer
+* Terminal
+* Git integration
+* AI Agent
+* Project management
+* Existing Android development workflow
+
+The primary goal is to replace or bypass the current heavy Gradle-based project build workflow with a **lightweight on-device Android build system inspired by Sketchware Pro**.
+
+---
+
+# MAIN OBJECTIVE
+
+Transform Android Code Studio into a lightweight Android application builder where the user can:
+
+1. Create/open an Android project.
+2. Edit Java/Kotlin/XML files.
+3. Use the existing AI Agent.
+4. Press BUILD APK.
+5. Compile the project directly on the Android device.
+6. Generate an APK without requiring the user to download a complete Android Studio/Gradle environment on first launch.
+7. Keep the build tools bundled or managed efficiently.
+8. Avoid downloading the complete Android SDK + Gradle environment automatically when the application starts.
+9. Make the build experience similar to Sketchware Pro.
+
+The user should NOT see a requirement like:
+
+"Downloading complete SDK..."
+"Downloading Gradle distribution..."
+"Setting up Android Studio environment..."
+
+during normal first launch.
+
+---
+
+# IMPORTANT ARCHITECTURAL RULE
+
+Do NOT simply hide the existing Gradle UI.
+
+The build pipeline itself must be redesigned.
+
+Current concept:
+
+Android Code Studio
+↓
+Gradle
+↓
+AGP
+↓
+Android SDK
+↓
+APK
+
+Target concept:
+
+Android Code Studio
+↓
+Lightweight Build Engine
+↓
+Project Parser
+↓
+Resource Compiler
+↓
+Java/Kotlin Compiler
+↓
+DEX Compiler
+↓
+APK Packager
+↓
+APK Signer
+↓
+Final APK
+
+---
+
+# STEP 1 — ANALYZE THE EXISTING SOURCE FIRST
+
+Before modifying anything, inspect the entire Android Code Studio repository.
+
+Do NOT guess class names.
+
+Find:
+
+* Current build service
+* Gradle execution code
+* Build buttons/actions
+* Project model
+* Android project detection
+* SDK detection
+* JDK detection
+* Terminal integration
+* AI Agent architecture
+* APK installation workflow
+* Build log viewer
+* Error parser
+* Project file structure
+* Existing `acs-build-system`
+* Any existing compiler abstraction/interfaces
+* Any existing process execution framework
+
+Search the source for:
+
+* Gradle
+* GradleBuildService
+* BuildService
+* assembleDebug
+* assembleRelease
+* gradlew
+* gradle-wrapper
+* Android Gradle Plugin
+* sdkmanager
+* aapt
+* aapt2
+* d8
+* dx
+* javac
+* kotlinc
+* zipalign
+* apksigner
+* jarsigner
+* signing
+* buildToolsVersion
+* compileSdk
+* minSdk
+* targetSdk
+
+Create a source-code map before editing.
+
+Output:
+
+FILE → CLASS → RESPONSIBILITY → CURRENT BUILD DEPENDENCY
+
+Do not modify files until this analysis is complete.
+
+---
+
+# STEP 2 — CREATE A NEW BUILD ABSTRACTION
+
+Create a clean abstraction:
+
+BuildEngine
+
+Example conceptual API:
+
+BuildEngine
+├── prepareProject()
+├── validateProject()
+├── compileResources()
+├── compileJava()
+├── compileKotlin()
+├── convertToDex()
+├── packageApk()
+├── alignApk()
+├── signApk()
+├── installApk()
+└── clean()
+
+Create:
+
+BuildRequest
+BuildResult
+BuildError
+BuildProgress
+BuildOptions
+
+Example:
+
+BuildRequest:
+
+* projectPath
+* applicationId
+* minSdk
+* targetSdk
+* compileSdk
+* versionCode
+* versionName
+* debug/release
+* signing configuration
+
+BuildResult:
+
+* success
+* apkPath
+* errorMessage
+* buildTime
+* warnings
+
+The UI must communicate with BuildEngine instead of directly calling Gradle.
+
+---
+
+# STEP 3 — LIGHTWEIGHT BUILD PIPELINE
+
+Implement the following pipeline.
+
+## Phase A — Project Preparation
+
+Read:
+
+AndroidManifest.xml
+res/
+assets/
+src/
+libs/
+project configuration
+
+Generate a temporary build directory.
+
+Example:
+
+.project/
+src/
+res/
+assets/
+AndroidManifest.xml
+
+```
+    ↓
+```
+
+.build/
+generated/
+classes/
+resources/
+dex/
+intermediate/
+apk/
+
+Do not modify the user's source files unnecessarily.
+
+---
+
+# STEP 4 — RESOURCE COMPILATION
+
+Implement Android resource compilation using AAPT2 or the most appropriate Android resource compiler available for the target architecture.
+
+Required operations:
+
+* compile resources
+* link resources
+* generate R class/resource IDs
+* process AndroidManifest.xml
+* package resources
+* process assets
+
+The build engine should locate its bundled resource compiler internally.
+
+Do NOT require the user to manually install Android Studio.
+
+If AAPT2 cannot legally or technically be bundled directly, design a downloadable build-tools package system.
+
+---
+
+# STEP 5 — JAVA COMPILATION
+
+Support Java Android projects.
+
+Pipeline:
+
+.java
+↓
+javac
+↓
+.class
+↓
+D8
+↓
+.dex
+
+The Java compiler should use a controlled JDK/runtime supplied by the application or build environment.
+
+Avoid requiring a complete Android Studio installation.
+
+Support at least the Java language level realistically supported by the selected Android runtime/toolchain.
+
+---
+
+# STEP 6 — KOTLIN SUPPORT
+
+Do NOT make Kotlin support a mandatory first-release dependency if it causes a major APK-size increase.
+
+Implement Kotlin as a separate optional compiler package.
+
+Architecture:
+
+Core Builder
+↓
+Java/XML builder
+
+Optional:
+
+Kotlin Compiler Package
+↓
+Kotlin → JVM bytecode
+↓
+D8
+↓
+DEX
+
+The user should be able to install Kotlin compiler support only when required.
+
+---
+
+# STEP 7 — DEX COMPILATION
+
+Use D8 or the most appropriate Android-compatible dex compiler.
+
+Pipeline:
+
+.class
+↓
+D8
+↓
+classes.dex
+classes2.dex
+...
+
+Support:
+
+* multidex when necessary
+* debug builds
+* release builds
+
+The DEX compiler should be invoked by BuildEngine, not manually by the user.
+
+---
+
+# STEP 8 — APK PACKAGING
+
+Build the APK without Gradle.
+
+Conceptual pipeline:
+
+resources.arsc
+AndroidManifest.xml
+classes.dex
+assets/
+res/
+native libraries
+META-INF
+
+```
+    ↓
+```
+
+APK
+
+Then:
+
+APK
+↓
+zipalign
+↓
+apksigner
+↓
+signed APK
+
+Output:
+
+/project/build/outputs/apk/debug/app-debug.apk
+
+and for release:
+
+/project/build/outputs/apk/release/app-release.apk
+
+---
+
+# STEP 9 — SIGNING
+
+Implement:
+
+Debug signing:
+
+* automatically generated or bundled development keystore
+
+Release signing:
+
+* user-selected keystore
+* alias
+* password
+* signing configuration
+
+Never expose passwords in logs.
+
+Store signing credentials securely.
+
+Provide:
+
+Build → Generate Signed APK
+
+---
+
+# STEP 10 — SDK STRATEGY
+
+This is one of the most important requirements.
+
+DO NOT download the complete Android SDK on first launch.
+
+Instead create:
+
+Lightweight SDK Manager
+
+Example:
+
+Core package:
+
+* required platform resources
+* required build tools
+* required compiler binaries
+
+Optional packages:
+
+Android API 35
+Android API 36
+Android API 37
+etc.
+
+Only download a platform when the user actually selects it.
+
+Example:
+
+User selects:
+
+compileSdk = 35
+
+Only the required API 35 platform package is downloaded.
+
+Do NOT download:
+
+* unnecessary system images
+* emulator
+* NDK
+* documentation
+* sources
+* unnecessary platform versions
+
+---
+
+# STEP 11 — BUILD TOOLS PACKAGE SYSTEM
+
+Create a package manager:
+
+BuildToolsManager
+
+Responsibilities:
+
+* check installed compiler version
+* download missing package
+* verify SHA-256
+* unpack
+* store locally
+* update
+* remove unused versions
+
+Directory example:
+
+/AndroidCodeStudio/
+/toolchains/
+/aapt2/
+/d8/
+/zipalign/
+/apksigner/
+/javac/
+/kotlin/
+
+Do not duplicate the same binary for every project.
+
+One shared compiler installation must serve all projects.
+
+---
+
+# STEP 12 — OFFLINE BUILD
+
+After the required packages have been installed, the project should build offline.
+
+Example:
+
+First build:
+Internet required
+↓
+Download required package
+↓
+Cache locally
+
+Future builds:
+NO INTERNET REQUIRED
+
+Build directly from local toolchain.
+
+---
+
+# STEP 13 — PROJECT DEPENDENCIES
+
+This is another major challenge.
+
+Do not attempt to support every Maven/Gradle dependency in version 1.
+
+Create a lightweight dependency manager.
+
+Support:
+
+libs/*.jar
+libs/*.aar
+
+and a controlled local library repository.
+
+Example:
+
+project/
+libs/
+library1.jar
+library2.aar
+
+The BuildEngine should automatically include them.
+
+For Maven dependencies:
+
+Dependency
+↓
+Dependency Resolver
+↓
+Download
+↓
+Local cache
+
+Cache location:
+
+/AndroidCodeStudio/.cache/maven/
+
+Once cached, builds should work offline.
+
+---
+
+# STEP 14 — ANDROIDX SUPPORT
+
+Provide a built-in compatible AndroidX library repository/package system.
+
+Do NOT bundle every AndroidX library into every generated APK.
+
+Only include libraries actually used by the project.
+
+Example:
+
+Project uses:
+
+androidx.appcompat
+
+Then include only required dependencies.
+
+Use dependency resolution and caching.
+
+---
+
+# STEP 15 — AI AGENT INTEGRATION
+
+KEEP the existing Android Code Studio AI Agent.
+
+Modify its capabilities so that it understands the new BuildEngine.
+
+AI Agent should be able to:
+
+* inspect project
+* create files
+* modify files
+* create activities
+* create XML layouts
+* add dependencies
+* modify Manifest
+* run build
+* read compiler errors
+* fix compilation errors
+* rebuild
+* install APK
+
+Example workflow:
+
+User:
+
+"Create a login screen with email and password."
+
+AI:
+
+1. Inspect project
+2. Create XML
+3. Create Activity
+4. Update Manifest if required
+5. Run BuildEngine
+6. Read build errors
+7. Fix errors
+8. Rebuild
+9. Report APK path
+
+---
+
+# STEP 16 — AI BUILD LOOP
+
+Implement:
+
+AI Agent
+↓
+Modify project
+↓
+Build
+↓
+BuildResult
+↓
+If failed:
+↓
+Parse error
+↓
+AI receives error
+↓
+AI fixes source
+↓
+Build again
+
+Maximum automatic retry:
+
+3 attempts
+
+After 3 failures, show the user the actual error.
+
+Never create an infinite build loop.
+
+---
+
+# STEP 17 — BUILD ERROR PARSER
+
+Create:
+
+BuildErrorParser
+
+It should recognize:
+
+* Java compilation errors
+* Kotlin compilation errors
+* XML errors
+* Manifest errors
+* missing resources
+* missing classes
+* duplicate classes
+* dependency errors
+* D8 errors
+* AAPT2 errors
+* signing errors
+
+Convert raw compiler output into:
+
+File
+Line
+Column
+Error
+Suggested fix
+
+Example:
+
+MainActivity.java
+Line 42
+Cannot find symbol
+
+AI Agent should receive structured error information.
+
+---
+
+# STEP 18 — BUILD UI
+
+Keep Android Code Studio's existing UI style.
+
+Add:
+
+Build
+Run
+Debug
+Release APK
+Clean
+Build Settings
+
+Build screen:
+
+---
+
+## Building MyApp
+
+✓ Project validation
+✓ Resources
+✓ Java compilation
+✓ DEX
+✓ APK packaging
+✓ Signing
+
+Build successful
+
+APK:
+app-debug.apk
+
+[Install]
+[Open folder]
+[Share]
+
+---
+
+On failure:
+
+✗ Java compilation
+
+MainActivity.java:42
+
+Cannot find symbol...
+
+[Ask AI to Fix]
+[Open File]
+
+---
+
+# STEP 19 — FIRST-LAUNCH EXPERIENCE
+
+The first launch must NOT automatically start:
+
+* Gradle download
+* SDK download
+* NDK download
+* Maven download
+* JDK download
+
+Instead:
+
+Welcome
+
+"Android Code Studio is ready."
+
+When the user creates the first project:
+
+Choose:
+
+Build Engine:
+Lightweight
+
+Required package:
+
+Android API 35
+Build Tools
+Java compiler
+
+[Download Required Components]
+
+Only then download the minimum required packages.
+
+---
+
+# STEP 20 — BUILD CACHE
+
+Create a shared cache.
+
+Example:
+
+/AndroidCodeStudio/cache/
+
+```
+/aapt2/
+/d8/
+/jdk/
+/android-platforms/
+/libraries/
+/maven/
+```
+
+Do not download the same dependency multiple times.
+
+Use SHA-256 verification.
+
+---
+
+# STEP 21 — STORAGE OPTIMIZATION
+
+The application must avoid unnecessary duplication.
+
+Bad:
+
+Project A → own AAPT2
+Project B → own AAPT2
+Project C → own AAPT2
+
+Good:
+
+Shared AAPT2
+Shared D8
+Shared JDK
+Shared Android platforms
+Shared libraries
+
+Projects only contain source/build output.
+
+---
+
+# STEP 22 — MEMORY OPTIMIZATION
+
+The build system must work on typical Android phones.
+
+Requirements:
+
+* avoid loading entire APK into RAM
+* stream large files
+* use temporary files
+* clean intermediate files
+* release compiler processes
+* prevent memory leaks
+* show build progress
+* handle process cancellation
+
+Implement:
+
+Build Cancellation
+
+User presses:
+
+CANCEL BUILD
+
+All child compiler processes must terminate safely.
+
+---
+
+# STEP 23 — SECURITY
+
+Do not execute arbitrary downloaded binaries without verification.
+
+Every tool package should have:
+
+* version
+* architecture
+* SHA-256
+* source
+* compatibility information
+
+Example:
+
+Tool:
+aapt2
+
+Version:
+X.Y
+
+Architecture:
+arm64-v8a
+
+SHA-256:
+...
+
+Verify before execution.
+
+---
+
+# STEP 24 — ARCHITECTURE SUPPORT
+
+Support:
+
+arm64-v8a
+
+Optionally:
+
+armeabi-v7a
+
+x86_64
+
+Do not bundle every architecture into the APK if it unnecessarily increases size.
+
+Prefer downloading the toolchain matching the device ABI.
+
+---
+
+# STEP 25 — BACKWARD COMPATIBILITY
+
+Do not immediately delete Gradle support.
+
+Create two build modes:
+
+Build Engine:
+
+1. Gradle
+2. Lightweight
+
+Default:
+
+Lightweight
+
+Advanced users can still select:
+
+Gradle Build
+
+This allows gradual migration and easier debugging.
+
+---
+
+# STEP 26 — MIGRATION
+
+Existing Android Code Studio projects must continue opening.
+
+Detect:
+
+build.gradle
+settings.gradle
+gradle.properties
+libs
+src
+res
+AndroidManifest.xml
+
+Convert supported Gradle projects into the lightweight project model where possible.
+
+If a project uses unsupported Gradle features, show:
+
+"This project requires Gradle mode."
+
+Do not silently break the project.
+
+---
+
+# STEP 27 — UNSUPPORTED FEATURES
+
+Create a clear compatibility layer.
+
+Initially mark unsupported:
+
+* complex Gradle plugins
+* arbitrary Gradle tasks
+* custom Gradle scripts
+* native NDK builds
+* complex Kotlin compiler plugins
+* unusual annotation processors
+* custom build plugins
+
+Do not fake support.
+
+Show exactly why Lightweight Build cannot compile the project.
+
+---
+
+# STEP 28 — TEST PROJECTS
+
+Create automated test projects:
+
+Test 1:
+Basic Java + XML
+
+Test 2:
+Multiple Activities
+
+Test 3:
+RecyclerView
+
+Test 4:
+AndroidX
+
+Test 5:
+External JAR
+
+Test 6:
+AAR
+
+Test 7:
+Images/resources
+
+Test 8:
+Debug APK
+
+Test 9:
+Release signed APK
+
+Test 10:
+Multidex
+
+Test 11:
+Kotlin project
+
+Test 12:
+AI-generated project
+
+Every test must produce a valid installable APK.
+
+---
+
+# STEP 29 — DO NOT COPY CODE BLINDLY
+
+Sketchware Pro can be used as an architectural reference.
+
+Study concepts such as:
+
+ProjectBuilder
+Manifest generation
+Activity code generation
+Layout generation
+Library dependency registry
+Project file organization
+
+But do not blindly copy code.
+
+Respect licenses and preserve required license notices.
+
+The goal is to build a clean BuildEngine suitable for Android Code Studio.
+
+---
+
+# STEP 30 — IMPLEMENTATION ORDER
+
+Do NOT attempt everything at once.
+
+Implement in this exact order:
+
+Phase 1:
+Source analysis
+
+Phase 2:
+BuildEngine interface
+
+Phase 3:
+Project validation
+
+Phase 4:
+AAPT2 resource pipeline
+
+Phase 5:
+Java compilation
+
+Phase 6:
+D8
+
+Phase 7:
+APK packaging
+
+Phase 8:
+zipalign
+
+Phase 9:
+APK signing
+
+Phase 10:
+Build UI
+
+Phase 11:
+Install APK
+
+Phase 12:
+Build cache
+
+Phase 13:
+SDK/platform package manager
+
+Phase 14:
+Dependency manager
+
+Phase 15:
+AI build/fix loop
+
+Phase 16:
+Kotlin support
+
+Phase 17:
+Gradle compatibility mode
+
+---
+
+# CRITICAL REQUIREMENTS
+
+1. Do not rewrite Android Code Studio from scratch.
+
+2. Reuse existing editor, project manager, AI Agent and UI.
+
+3. Do not remove Gradle immediately.
+
+4. Introduce Lightweight BuildEngine beside Gradle first.
+
+5. Make Lightweight mode the default only after successful tests.
+
+6. Do not download the entire Android SDK automatically.
+
+7. Do not require Android Studio on the user's phone.
+
+8. Do not require Termux for normal APK building.
+
+9. Build APK directly from the Android Code Studio application.
+
+10. Use shared cached compiler tools.
+
+11. Support offline builds after initial tool installation.
+
+12. Keep the final APK of Android Code Studio itself optimized.
+
+13. Do not bundle unnecessary SDK platforms.
+
+14. Do not download unnecessary NDK/emulator/system images.
+
+15. Never hide build errors.
+
+16. AI must be able to read structured build errors.
+
+17. AI must be able to fix errors and rebuild.
+
+18. Prevent infinite AI build loops.
+
+19. Keep Gradle mode as a fallback during development.
+
+20. Do not claim a feature works until an actual test APK is generated and installed.
+
+---
+
+# FINAL DELIVERABLE
+
+At the end provide:
+
+1. Modified source tree
+2. BuildEngine architecture
+3. List of modified files
+4. List of newly created files
+5. Gradle integration changes
+6. Lightweight compiler components
+7. SDK/package manager
+8. Dependency manager
+9. AI Agent integration
+10. Build error parser
+11. APK signing system
+12. Offline build system
+13. Storage/memory optimization
+14. Test results
+15. Known limitations
+
+Most importantly:
+
+Generate a working Android Code Studio fork where a simple Java/XML Android project can be compiled into an installable APK directly on the Android device using the new Lightweight BuildEngine without requiring a complete Gradle/Android Studio environment.
