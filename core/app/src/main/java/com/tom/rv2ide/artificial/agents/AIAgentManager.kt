@@ -60,6 +60,28 @@ class AIAgentManager(private val context: Context) {
         setProvider(currentProviderId)
     }
     
+    suspend fun buildAndAutoFix(projectDir: File): Boolean {
+        var attempts = 0
+        while (attempts < 3) {
+            val buildService = com.tom.rv2ide.services.builder.LightweightBuildService()
+            val result = buildService.executeTasks("${projectDir.absolutePath}:assembleDebug").get()
+            
+            if (result != null && result.isSuccessful) {
+                return true
+            }
+            
+            val errors = result?.failedTasks ?: emptyList()
+            if (errors.isEmpty()) break
+            
+            val agent = currentAgent ?: return false
+            val fixes = agent.handleBuildError(errors.filterNotNull())
+            if (fixes.isFailure) break
+            
+            attempts++
+        }
+        return false
+    }
+    
     fun getCurrentAgent(): AIAgent? = currentAgent
 
     fun setProvider(providerId: String): Boolean {

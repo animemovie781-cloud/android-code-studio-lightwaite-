@@ -46,6 +46,10 @@ interface AIAgent {
     fun undoLastModification(): Boolean
     fun getModificationHistory(): List<ModificationAttempt>
     
+    // NEW: Build error handling for Lightweight Build Engine
+    suspend fun handleBuildError(errors: List<String>): Result<List<String>>
+    suspend fun buildAndFixLoop(maxAttempts: Int = 3): Result<java.io.File>
+    
     fun resetAttemptCount()
     fun incrementAttemptCount()
     fun getCurrentAttemptCount(): Int

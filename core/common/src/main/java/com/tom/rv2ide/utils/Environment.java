@@ -55,6 +55,13 @@ public final class Environment {
 
     public static File TOOLING_API_JAR;
 
+    public static File LIGHTWEIGHT_TOOLS_DIR;
+    public static File D8_JAR;
+    public static File ECJ_JAR;
+    public static File ZIPALIGN;
+    public static File APKSIGNER_JAR;
+    public static File DEBUG_KEYSTORE;
+
     public static File INIT_SCRIPT;
     public static File GRADLE_USER_HOME;
     public static File AAPT2;
@@ -85,6 +92,14 @@ public final class Environment {
         TOOLING_API_JAR = new File(mkdirIfNotExits(new File(ANDROIDIDE_HOME, "tooling-api")),
         "tooling-api-all.jar");
         AAPT2 = new File(ANDROIDIDE_HOME, "aapt2");
+        
+        LIGHTWEIGHT_TOOLS_DIR = mkdirIfNotExits(new File(ANDROIDIDE_HOME, "lightweight-tools"));
+        D8_JAR = new File(LIGHTWEIGHT_TOOLS_DIR, "d8.jar");
+        ECJ_JAR = new File(LIGHTWEIGHT_TOOLS_DIR, "ecj.jar");
+        ZIPALIGN = new File(LIGHTWEIGHT_TOOLS_DIR, "zipalign");
+        APKSIGNER_JAR = new File(LIGHTWEIGHT_TOOLS_DIR, "apksigner.jar");
+        DEBUG_KEYSTORE = new File(LIGHTWEIGHT_TOOLS_DIR, "debug.keystore");
+        
         ANDROIDIDE_UI = mkdirIfNotExits(new File(ANDROIDIDE_HOME, "ui"));
         REALM_DB_DIR = mkdirIfNotExits(new File(ROOT, "realm-dbs"));
 

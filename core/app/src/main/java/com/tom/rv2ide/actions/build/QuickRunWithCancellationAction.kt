@@ -121,6 +121,11 @@ class QuickRunWithCancellationAction(context: Context, override val order: Int) 
   }
 
   private fun quickRun(data: ActionData): Boolean {
+    val projectManager = com.tom.rv2ide.projects.internal.ProjectManagerImpl.getInstance()
+    if (isLightweightProject(projectManager.projectDir)) {
+      return lightweightBuild(data, projectManager.projectDir)
+    }
+
     openApplicationModuleChooser(data) { module ->
       val activity = data.requireActivity()
 
@@ -268,6 +273,44 @@ class QuickRunWithCancellationAction(context: Context, override val order: Int) 
       log.error("APK file does not exist!")
       return
     }
+    
+    installInternal(activity, apk)
+  }
+
+  private fun isLightweightProject(dir: File?): Boolean {
+    if (dir == null) return false
+    return File(dir, "project.json").exists() && 
+           !File(dir, "build.gradle").exists() &&
+           !File(dir, "build.gradle.kts").exists()
+  }
+
+  private fun lightweightBuild(data: ActionData, projectDir: File): Boolean {
+    val activity = data.requireActivity()
+    activity.flashError("Starting lightweight build...")
+    
+    val buildService = com.tom.rv2ide.services.builder.LightweightBuildService()
+    
+    actionScope.launch(Dispatchers.Default) {
+      activity.saveAllResult()
+      
+      val result = withContext(Dispatchers.IO) { 
+        buildService.executeTasks("${projectDir.absolutePath}:assembleDebug").get() 
+      }
+      
+      if (result?.isSuccessful == true) {
+        val apkFile = File(projectDir, "build/app-debug.apk")
+        install(data, apkFile)
+      } else {
+        log.error("Lightweight build failed")
+        activity.flashError("Build failed")
+      }
+    }
+    
+    return true
+  }
+  
+  private fun installInternal(activity: Context, apk: File) {
+    // Existing install logic goes here (truncated in original file)
 
     log.debug("Installing APK: {}", apk)
 
