@@ -22,9 +22,8 @@ class DexCompiler : BuildStepExecutor() {
             return true
         }
 
-        val java = File(Environment.JAVA_HOME, "bin/java").absolutePath
         val command = mutableListOf(
-            java,
+            "dalvikvm",
             "-cp", config.d8Jar.absolutePath,
             "com.android.tools.r8.D8",
             "--output", dexDir.absolutePath,

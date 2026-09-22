@@ -36,10 +36,10 @@ class ApkSigner : BuildStepExecutor() {
             signedApk.delete()
         }
 
-        val java = File(Environment.JAVA_HOME, "bin/java").absolutePath
         val command = mutableListOf(
-            java,
-            "-jar", config.apksigner.absolutePath,
+            "dalvikvm",
+            "-cp", config.apksigner.absolutePath,
+            "com.android.apksigner.ApkSignerTool",
             "sign",
             "--ks", keystore.absolutePath,
             "--ks-pass", "pass:android",

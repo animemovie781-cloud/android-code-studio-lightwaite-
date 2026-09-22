@@ -48,17 +48,15 @@ class JavaCompiler : BuildStepExecutor() {
 
         val command = mutableListOf<String>()
         
-        // Sketchware style: use ECJ jar. We can run it via dalvikvm if it's dexed, 
-        // or java if we have it. Since ACS has java, we'll use java -jar ecj.jar 
-        // for now, but it's ECJ doing the work, not JDK's javac.
+        // Use dalvikvm to run ECJ directly on Android without JDK
         if (config.ecjJar != null && config.ecjJar.exists()) {
             command.addAll(listOf(
-                File(Environment.JAVA_HOME, "bin/java").absolutePath,
-                "-jar", config.ecjJar.absolutePath
+                "dalvikvm",
+                "-cp", config.ecjJar.absolutePath,
+                "org.eclipse.jdt.internal.compiler.batch.Main"
             ))
         } else {
-            // Fallback to javac if ecj is not available
-            command.add(File(Environment.JAVA_HOME, "bin/javac").absolutePath)
+            command.add("dalvikvm") // Fallback, though javac won't work on dalvikvm directly
         }
 
         command.addAll(listOf(

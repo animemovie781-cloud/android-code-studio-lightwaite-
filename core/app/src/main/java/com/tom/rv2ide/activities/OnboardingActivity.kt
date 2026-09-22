@@ -162,16 +162,10 @@ class OnboardingActivity : AppIntro2() {
       return
     }
 
-    if (!checkToolsIsInstalled() && currentFragment is IdeSetupConfigurationFragment) {
-      val intent = Intent(this, TerminalActivity::class.java)
-      if (currentFragment.isAutoInstall()) {
-        intent.putExtra(TerminalActivity.EXTRA_ONBOARDING_RUN_IDESETUP, true)
-        intent.putExtra(
-            TerminalActivity.EXTRA_ONBOARDING_RUN_IDESETUP_ARGS,
-            currentFragment.buildIdeSetupArguments(),
-        )
-      }
-      terminalActivityCallback.launch(intent)
+    if (currentFragment is IdeSetupConfigurationFragment) {
+      // Just mark it as done and go to main
+      prefManager.putBoolean("ide.setup.completed", true)
+      tryNavigateToMainIfSetupIsCompleted()
       return
     }
 
@@ -184,8 +178,7 @@ class OnboardingActivity : AppIntro2() {
   }
 
   private fun isSetupCompleted(): Boolean {
-    return checkToolsIsInstalled() &&
-        StatPreferences.statConsentDialogShown &&
+    return StatPreferences.statConsentDialogShown &&
         PermissionsFragment.areAllPermissionsGranted(this)
   }
 
