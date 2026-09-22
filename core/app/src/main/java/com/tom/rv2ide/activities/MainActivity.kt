@@ -203,7 +203,19 @@ class MainActivity : EdgeToEdgeIDEActivity() {
 
   internal fun openProject(root: File) {
     IProjectManager.getInstance().openProject(root)
-    startActivity(Intent(this, EditorActivityKt::class.java))
+    val isLightweight = File(root, "project.json").exists()
+    
+    if (isLightweight) {
+        val intent = Intent(this, com.tom.rv2ide.uidesigner.SketchwareEditorActivity::class.java)
+        // Pass the main layout file by default for Sketchware feel
+        val layoutFile = File(root, "src/main/res/layout/activity_main.xml")
+        if (layoutFile.exists()) {
+            intent.putExtra(com.tom.rv2ide.uidesigner.SketchwareEditorActivity.EXTRA_FILE, layoutFile.absolutePath)
+        }
+        startActivity(intent)
+    } else {
+        startActivity(Intent(this, EditorActivityKt::class.java))
+    }
   }
 
   override fun onDestroy() {

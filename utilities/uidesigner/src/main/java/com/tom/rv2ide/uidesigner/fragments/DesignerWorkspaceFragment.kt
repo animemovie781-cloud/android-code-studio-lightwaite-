@@ -233,7 +233,12 @@ class DesignerWorkspaceFragment : BaseFragment() {
 
   fun updateHierarchy() {
     if (workspaceView.childCount > 0) {
-      (requireActivity() as UIDesignerActivity).setupHierarchy(workspaceView[0])
+      val activity = requireActivity()
+      if (activity is UIDesignerActivity) {
+          activity.setupHierarchy(workspaceView[0])
+      } else if (activity is com.tom.rv2ide.uidesigner.SketchwareEditorActivity) {
+          activity.setupHierarchy(workspaceView[0])
+      }
     }
   }
 
